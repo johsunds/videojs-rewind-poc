@@ -30,6 +30,7 @@
 
     <div style="display: flex; gap: 8px;" id="playbackRateButtons">
     </div>
+    <button id="dashButton">DASH</button>
   </div>
 
   <script>
@@ -47,6 +48,10 @@
       });
       playbackRateButtons.appendChild(btn);
     });
+
+    document.querySelector("#dashButton").addEventListener("click", () => {
+      player.src({ src: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd', type: 'application/dash+xml'});
+    })
 
   </script>
 
