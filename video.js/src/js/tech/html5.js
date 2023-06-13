@@ -1568,22 +1568,10 @@ Html5.resetMediaElement = function(el) {
 
 // Wrap native properties with a getter
 // The list is as followed
-// paused, currentTime, buffered, volume, poster, preload, error, seeking
-// seekable, ended, playbackRate, defaultPlaybackRate, disablePictureInPicture
+// currentTime, buffered, volume, poster, preload, error, seeking
+// seekable, ended, defaultPlaybackRate, disablePictureInPicture
 // played, networkState, readyState, videoWidth, videoHeight, crossOrigin
 [
-  /**
-   * Get the value of `paused` from the media element. `paused` indicates whether the media element
-   * is currently paused or not.
-   *
-   * @method Html5#paused
-   * @return {boolean}
-   *         The value of `paused` from the media element.
-   *
-   * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-paused}
-   */
-  'paused',
-
   /**
    * Get the value of `currentTime` from the media element. `currentTime` indicates
    * the current second that the media is at in playback.
@@ -1708,21 +1696,6 @@ Html5.resetMediaElement = function(el) {
    * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-ended}
    */
   'ended',
-
-  /**
-   * Get the value of `playbackRate` from the media element. `playbackRate` indicates
-   * the rate at which the media is currently playing back. Examples:
-   *   - if playbackRate is set to 2, media will play twice as fast.
-   *   - if playbackRate is set to 0.5, media will play half as fast.
-   *
-   * @method Html5#playbackRate
-   * @return {number}
-   *         The value of `playbackRate` from the media element. A number indicating
-   *         the current playback speed of the media, where 1 is normal speed.
-   *
-   * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-playbackrate}
-   */
-  'playbackRate',
 
   /**
    * Get the value of `defaultPlaybackRate` from the media element. `defaultPlaybackRate` indicates
@@ -1852,7 +1825,7 @@ Html5.resetMediaElement = function(el) {
 // Wrap native properties with a setter in this format:
 // set + toTitleCase(name)
 // The list is as follows:
-// setVolume, setSrc, setPoster, setPreload, setPlaybackRate, setDefaultPlaybackRate,
+// setVolume, setSrc, setPoster, setPreload, setDefaultPlaybackRate,
 // setDisablePictureInPicture, setCrossOrigin
 [
   /**
@@ -1913,21 +1886,6 @@ Html5.resetMediaElement = function(el) {
   'preload',
 
   /**
-   * Set the value of `playbackRate` on the media element. `playbackRate` indicates
-   * the rate at which the media should play back. Examples:
-   *   - if playbackRate is set to 2, media will play twice as fast.
-   *   - if playbackRate is set to 0.5, media will play half as fast.
-   *
-   * @method Html5#setPlaybackRate
-   * @return {number}
-   *         The value of `playbackRate` from the media element. A number indicating
-   *         the current playback speed of the media, where 1 is normal speed.
-   *
-   * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-playbackrate}
-   */
-  'playbackRate',
-
-  /**
    * Set the value of `defaultPlaybackRate` on the media element. `defaultPlaybackRate` indicates
    * the rate at which the media should play back upon initial startup. Changing this value
    * after a video has started will do nothing. Instead you should used {@link Html5#setPlaybackRate}.
@@ -1978,17 +1936,8 @@ Html5.resetMediaElement = function(el) {
 
 // wrap native functions with a function
 // The list is as follows:
-// pause, load, play
+// load
 [
-  /**
-   * A wrapper around the media elements `pause` function. This will call the `HTML5`
-   * media elements `pause` function.
-   *
-   * @method Html5#pause
-   * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-pause}
-   */
-  'pause',
-
   /**
    * A wrapper around the media elements `load` function. This will call the `HTML5`s
    * media element `load` function.
@@ -1998,19 +1947,73 @@ Html5.resetMediaElement = function(el) {
    */
   'load',
 
-  /**
-   * A wrapper around the media elements `play` function. This will call the `HTML5`s
-   * media element `play` function.
-   *
-   * @method Html5#play
-   * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-play}
-   */
-  'play'
 ].forEach(function(prop) {
   Html5.prototype[prop] = function() {
     return this.el_[prop]();
   };
 });
+
+Html5.prototype.playbackRate = function() {
+  return this.extendedPlaybackRate || this.el_.defaultPlaybackRate;
+}
+
+Html5.prototype.setPlaybackRate = function(playbackRate) {
+  this.extendedPlaybackRate = playbackRate;
+  if (playbackRate >= 0) {
+    this.el_.playbackRate = playbackRate;
+  }
+  if (!this.paused()) {
+    this.play();
+  }
+}
+
+Html5.prototype.isRewinding = function() {
+  return !!this.rewindInterval;
+}
+
+Html5.prototype.stopRewind = function() {
+  this.clearInterval(this.rewindInterval);
+}
+
+Html5.prototype.rewind = function() {
+  this.stopRewind();
+  this.el_.pause();
+  const speed = -this.extendedPlaybackRate;
+  const prevRealTime = new Date().getTime();
+  const prevTickVideoTime = this.el_.currentTime;
+  this.el_.playbackRate = 1.0;
+  
+  this.rewindInterval = this.setInterval(function(){
+      const elapsedRealTime = new Date().getTime() - prevRealTime;
+      const newCurrentTime = Math.max(prevTickVideoTime - elapsedRealTime * speed / 1000.0, 0);
+      if (newCurrentTime === 0) {
+        this.setPlaybackRate(1.0);
+        this.pause();
+      } else {
+        this.el_.currentTime = newCurrentTime;
+      }
+  }, 30);
+}
+
+Html5.prototype.play = function() {
+  console.log("PLAY")
+  this.stopRewind();
+  if (this.extendedPlaybackRate < 0) {
+    this.rewind();
+    return Promise.resolve();
+  } else {
+    return this.el_.play();
+  }
+}
+
+Html5.prototype.pause = function() {
+  this.stopRewind();
+  this.el_.pause();
+}
+
+Html5.prototype.paused = function () {
+  return this.el_.paused && !this.isRewinding();
+}
 
 Tech.withSourceHandlers(Html5);
 
@@ -2097,3 +2100,4 @@ Html5.registerSourceHandler(Html5.nativeSourceHandler);
 
 Tech.registerTech('Html5', Html5);
 export default Html5;
+
