@@ -32,7 +32,17 @@ class Html5 extends Tech {
   *        Callback function to call when the `HTML5` Tech is ready.
   */
   constructor(options, ready) {
-    super(options, ready);
+    super({ 
+      ...options, 
+      // Stops the default Component behavior of listening to events on the `el()`, i.e. the video element in this case.
+      // We do this to have more control over how events are triggered, e.g. 'play' and 'pause' in the rewind mode.
+      eventBusKey: null 
+    }, ready);
+
+    Html5.Events.forEach((type) => {
+      if (NON_FORWARDED_HTML_VIDEO_EVENTS.includes(type)) return;
+      this.el_.addEventListener(type, (e) => this.trigger(e));
+    })
 
     const source = options.source;
     let crossoriginTracks = false;
@@ -1216,6 +1226,12 @@ Html5.Events = [
   'volumechange'
 ];
 
+const NON_FORWARDED_HTML_VIDEO_EVENTS = [
+  'play',
+  'pause',
+  'ratechange',
+];
+
 /**
  * Boolean indicating whether the `Tech` supports volume control.
  *
@@ -1957,10 +1973,13 @@ Html5.prototype.playbackRate = function() {
   return this.extendedPlaybackRate || this.el_.defaultPlaybackRate;
 }
 
-Html5.prototype.setPlaybackRate = function(playbackRate) {
-  this.extendedPlaybackRate = playbackRate;
-  if (playbackRate >= 0) {
-    this.el_.playbackRate = playbackRate;
+Html5.prototype.setPlaybackRate = function(rate) {
+  if (rate != this.extendedPlaybackRate) {
+    this.trigger('ratechange');
+  }
+  this.extendedPlaybackRate = rate;
+  if (rate >= 0) {
+    this.el_.playbackRate = rate;
   }
   if (!this.paused()) {
     this.play();
@@ -1973,6 +1992,7 @@ Html5.prototype.isRewinding = function() {
 
 Html5.prototype.stopRewind = function() {
   this.clearInterval(this.rewindInterval);
+  this.rewindInterval = undefined;
 }
 
 Html5.prototype.rewind = function() {
@@ -1996,19 +2016,19 @@ Html5.prototype.rewind = function() {
 }
 
 Html5.prototype.play = function() {
-  console.log("PLAY")
   this.stopRewind();
   if (this.extendedPlaybackRate < 0) {
     this.rewind();
-    return Promise.resolve();
   } else {
-    return this.el_.play();
+    this.el_.play();
   }
+  this.trigger('play');
 }
 
 Html5.prototype.pause = function() {
   this.stopRewind();
   this.el_.pause();
+  this.trigger('pause');
 }
 
 Html5.prototype.paused = function () {
