@@ -498,8 +498,7 @@ class Tech extends Component {
    *
    * @see {Html5#play}
    */
-  play() {
-  }
+  play() {}
 
   /**
    * Set whether we are scrubbing or not

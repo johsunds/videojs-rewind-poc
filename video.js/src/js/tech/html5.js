@@ -32,8 +32,7 @@ class Html5 extends Tech {
   *        Callback function to call when the `HTML5` Tech is ready.
   */
   constructor(options, ready) {
-    super({ ...options, _test: null }, ready);
-
+    super(options, ready);
 
     const source = options.source;
     let crossoriginTracks = false;
@@ -1574,6 +1573,18 @@ Html5.resetMediaElement = function(el) {
 // played, networkState, readyState, videoWidth, videoHeight, crossOrigin
 [
   /**
+   * Get the value of `paused` from the media element. `paused` indicates whether the media element
+   * is currently paused or not.
+   *
+   * @method Html5#paused
+   * @return {boolean}
+   *         The value of `paused` from the media element.
+   *
+   * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-paused}
+   */
+  'paused',
+
+  /**
    * Get the value of `currentTime` from the media element. `currentTime` indicates
    * the current second that the media is at in playback.
    *
@@ -1967,7 +1978,7 @@ Html5.resetMediaElement = function(el) {
 
 // wrap native functions with a function
 // The list is as follows:
-// pause, load
+// pause, load, play
 [
   /**
    * A wrapper around the media elements `pause` function. This will call the `HTML5`
@@ -1986,25 +1997,20 @@ Html5.resetMediaElement = function(el) {
    * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-load}
    */
   'load',
+
+  /**
+   * A wrapper around the media elements `play` function. This will call the `HTML5`s
+   * media element `play` function.
+   *
+   * @method Html5#play
+   * @see [Spec]{@link https://www.w3.org/TR/html5/embedded-content-0.html#dom-media-play}
+   */
+  'play'
 ].forEach(function(prop) {
   Html5.prototype[prop] = function() {
     return this.el_[prop]();
   };
 });
-
-Html5.prototype["play"] = function() {
-  console.log("PLAY OVERRIDE");
-  this.el_.play();
-  // this.trigger("play");
-}
-
-Html5.prototype["pause"] = function() {
-  console.log("PAUSE OVERRIDE")
-}
-
-Html5.prototype["paused"] = function() {
-  console.log("PAUSED OVERRIDE")
-}
 
 Tech.withSourceHandlers(Html5);
 
