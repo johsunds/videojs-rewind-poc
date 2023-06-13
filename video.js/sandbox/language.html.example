@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<!-- Set Page Language Here -->
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>VideoJS Languages Demo</title>
+
+  <!-- Load the source files -->
+  <link href="../dist/video-js.css" rel="stylesheet" type="text/css">
+  <script src="../dist/video.js"></script>
+
+  <!-- Add support for Spanish 'es' -->
+  <script src="../dist/lang/es.js"></script>
+
+</head>
+<body>
+  <video id="vid1" class="video-js" controls preload="auto" width="640" height="264" data-setup=''>
+    <!--
+    <source src="https://video-js.zencoder.com/oceans-clip.mp4" type='video/mp4'>
+    <source src="https://video-js.zencoder.com/oceans-clip.webm" type='video/webm'>
+    <source src="https://video-js.zencoder.com/oceans-clip.ogv" type='video/ogg'>
+    -->
+  </video>
+
+  <script>
+    var player = videojs("vid1");
+    player.controlBar.show();
+    player.error(1);
+  </script>
+
+</body>
+</html>
