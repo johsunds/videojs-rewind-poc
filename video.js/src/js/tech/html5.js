@@ -13,6 +13,7 @@ import {toTitleCase} from '../utils/str.js';
 import {NORMAL as TRACK_TYPES, REMOTE} from '../tracks/track-types';
 import setupSourceset from './setup-sourceset';
 import {silencePromise} from '../utils/promise';
+import VdtSourceHandler from './vdt-source-handler';
 
 /**
  * HTML5 Media Controller - Wrapper for HTML5 Media API
@@ -2114,6 +2115,8 @@ Html5.nativeSourceHandler.handleSource = function(source, tech, options) {
  * A noop for the native dispose function, as cleanup is not needed.
  */
 Html5.nativeSourceHandler.dispose = function() {};
+
+Html5.registerSourceHandler(VdtSourceHandler);
 
 // Register the native source handler
 Html5.registerSourceHandler(Html5.nativeSourceHandler);
