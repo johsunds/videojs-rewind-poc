@@ -2116,7 +2116,7 @@ Html5.nativeSourceHandler.handleSource = function(source, tech, options) {
  */
 Html5.nativeSourceHandler.dispose = function() {};
 
-Html5.registerSourceHandler(VdtSourceHandler);
+// Html5.registerSourceHandler(VdtSourceHandler);
 
 // Register the native source handler
 Html5.registerSourceHandler(Html5.nativeSourceHandler);
