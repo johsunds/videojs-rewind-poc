@@ -437,12 +437,16 @@ export const isRangeDifferent = function(a, b) {
   return false;
 };
 
-export const lastBufferedEnd = function(a) {
-  if (!a || !a.length || !a.end) {
+export const lastBufferedEnd = function(a, playbackRate = 1) {
+  if (!a || !a.length || !a.end || !a.start) {
     return;
   }
 
-  return a.end(a.length - 1);
+  if (playbackRate >= 0) {
+    return a.end(a.length - 1);
+  } else {
+    return a.start(a.length - 1);
+  }
 };
 
 /**

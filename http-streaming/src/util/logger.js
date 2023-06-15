@@ -5,6 +5,10 @@ const logger = (source) => {
     return videojs.log.debug.bind(videojs, 'VHS:', `${source} >`);
   }
 
+  // if (videojs.log.warn) {
+  //   return videojs.log.warn.bind(videojs, 'VHS:', `${source} >`);
+  // }
+
   return function() {};
 };
 

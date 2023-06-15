@@ -1347,6 +1347,7 @@ export default class SegmentLoader extends videojs.EventTarget {
     // see if we need to begin loading immediately
     const segmentInfo = this.chooseNextRequest_();
 
+    console.log("CHOOSENEXT", segmentInfo);
     if (!segmentInfo) {
       return;
     }
@@ -1400,7 +1401,8 @@ export default class SegmentLoader extends videojs.EventTarget {
    */
   chooseNextRequest_() {
     const buffered = this.buffered_();
-    const bufferedEnd = lastBufferedEnd(buffered) || 0;
+    const playbackRate = this.vhs_.tech_.playbackRate();
+    const bufferedEnd = lastBufferedEnd(buffered, playbackRate) || 0;
     const bufferedTime = timeAheadOf(buffered, this.currentTime_());
     const preloaded = !this.hasPlayed_() && bufferedTime >= 1;
     const haveEnoughBuffer = bufferedTime >= this.goalBufferLength_();
@@ -1432,17 +1434,21 @@ export default class SegmentLoader extends videojs.EventTarget {
     if (next.isSyncRequest) {
       next.mediaIndex = getSyncSegmentCandidate(this.currentTimeline_, segments, bufferedEnd);
     } else if (this.mediaIndex !== null) {
+      const indexDelta = playbackRate >= 0 ? 1 : -1;
       const segment = segments[this.mediaIndex];
+      const nextSegment = segments[this.mediaIndex + indexDelta]
       const partIndex = typeof this.partIndex === 'number' ? this.partIndex : -1;
 
-      next.startOfSegment = segment.end ? segment.end : bufferedEnd;
+      const nextSegmentBegin = playbackRate >= 0 ? segment.end : (nextSegment?.end - nextSegment?.duration);
+      next.startOfSegment = nextSegmentBegin ? nextSegmentBegin : bufferedEnd;
 
-      if (segment.parts && segment.parts[partIndex + 1]) {
+      if (segment.parts && segment.parts[partIndex + indexDelta]) {
         next.mediaIndex = this.mediaIndex;
-        next.partIndex = partIndex + 1;
+        next.partIndex = partIndex + indexDelta;
       } else {
-        next.mediaIndex = this.mediaIndex + 1;
+        next.mediaIndex = this.mediaIndex + indexDelta;
       }
+      console.log({ prev: this.mediaIndex, next: next.mediaIndex })
     } else {
       // Find the segment containing the end of the buffer or current time.
       const {segmentIndex, startTime, partIndex} = Playlist.getMediaInfoForTime({
@@ -3075,10 +3081,13 @@ export default class SegmentLoader extends videojs.EventTarget {
     this.trigger('syncinfoupdate');
     const segment = segmentInfo.segment;
     const part = segmentInfo.part;
-    const badSegmentGuess = segment.end &&
-      this.currentTime_() - segment.end > segmentInfo.playlist.targetDuration * 3;
-    const badPartGuess = part &&
-      part.end && this.currentTime_() - part.end > segmentInfo.playlist.partTargetDuration * 3;
+    // const badSegmentGuess = segment.end &&
+    //   this.currentTime_() - segment.end > segmentInfo.playlist.targetDuration * 3;
+    // const badPartGuess = part &&
+    //   part.end && this.currentTime_() - part.end > segmentInfo.playlist.partTargetDuration * 3;
+
+    const badSegmentGuess = false;
+    const badPartGuess = false;
 
     // If we previously appended a segment/part that ends more than 3 part/targetDurations before
     // the currentTime_ that means that our conservative guess was too conservative.
