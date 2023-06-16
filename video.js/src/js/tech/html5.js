@@ -2022,6 +2022,16 @@ Html5.prototype.rewind = function() {
         this.setPlaybackRate(1.0);
         this.pause();
       } else {
+        const buffered = this.buffered();
+        if (!buffered.length) return;
+        const bufferedStart = buffered.start(buffered.length - 1);
+        const bufferedEnd = buffered.end(buffered.length - 1);
+        const currentTime = this.currentTime();
+
+        // abort seek if we're buffering
+        if (currentTime > bufferedEnd || currentTime < bufferedStart) {
+          return;
+        }
         this.isRewindSeek_ = true;
         this.el_.currentTime = newCurrentTime;
       }
