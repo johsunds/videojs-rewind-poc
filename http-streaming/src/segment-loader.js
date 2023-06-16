@@ -100,7 +100,7 @@ export const illegalMediaSwitch = (loaderType, startingMedia, trackInfo) => {
 };
 
 /**
- * Calculates a time value that is safe to remove from the back buffer without interrupting
+ * Calculates a time range that is safe to remove from the buffer without interrupting
  * playback.
  *
  * @param {TimeRange} seekable
@@ -109,28 +109,43 @@ export const illegalMediaSwitch = (loaderType, startingMedia, trackInfo) => {
  *        The current time of the player
  * @param {number} targetDuration
  *        The target duration of the current playlist
+ * @param {number} playbackRate
+ *        The current playbackRate
  * @return {number}
  *         Time that is safe to remove from the back buffer without interrupting playback
  */
-export const safeBackBufferTrimTime = (seekable, currentTime, targetDuration) => {
-  // 30 seconds before the playhead provides a safe default for trimming.
-  //
-  // Choosing a reasonable default is particularly important for high bitrate content and
-  // VOD videos/live streams with large windows, as the buffer may end up overfilled and
-  // throw an APPEND_BUFFER_ERR.
-  let trimTime = currentTime - Config.BACK_BUFFER_LENGTH;
+export const safeBackBufferTrimRange = (seekable, currentTime, targetDuration, playbackRate) => {
 
-  if (seekable.length) {
-    // Some live playlists may have a shorter window of content than the full allowed back
-    // buffer. For these playlists, don't save content that's no longer within the window.
-    trimTime = Math.max(trimTime, seekable.start(0));
+  if (playbackRate >= 0) {
+    // 30 seconds before the playhead provides a safe default for trimming.
+    //
+    // Choosing a reasonable default is particularly important for high bitrate content and
+    // VOD videos/live streams with large windows, as the buffer may end up overfilled and
+    // throw an APPEND_BUFFER_ERR.
+    let trimEnd = currentTime - Config.BACK_BUFFER_LENGTH;
+
+    if (seekable.length) {
+      // Some live playlists may have a shorter window of content than the full allowed back
+      // buffer. For these playlists, don't save content that's no longer within the window.
+      trimEnd = Math.max(trimEnd, seekable.start(0));
+    }
+
+    // Don't remove within target duration of the current time to avoid the possibility of
+    // removing the GOP currently being played, as removing it can cause playback stalls.
+    const maxTrimEnd = currentTime - targetDuration;
+
+    return [0, Math.min(maxTrimEnd, trimEnd)];
+  } else {
+    let trimStart = currentTime + Config.BACK_BUFFER_LENGTH;
+
+    if (seekable.length) {
+      trimStart = Math.min(trimStart, seekable.end(0));
+    }
+
+    const minTrimStart = currentTime + targetDuration;
+
+    return [Math.max(minTrimStart, trimStart), Infinity]
   }
-
-  // Don't remove within target duration of the current time to avoid the possibility of
-  // removing the GOP currently being played, as removing it can cause playback stalls.
-  const maxTrimTime = currentTime - targetDuration;
-
-  return Math.min(maxTrimTime, trimTime);
 };
 
 export const segmentInfoString = (segmentInfo) => {
@@ -1169,6 +1184,8 @@ export default class SegmentLoader extends videojs.EventTarget {
     };
     this.resetLoader();
 
+    console.log("RESET EVERYTHING")
+
     // remove from 0, the earliest point, to Infinity, to signify removal of everything.
     // VTT Segment Loader doesn't need to do anything but in the regular SegmentLoader,
     // we then clamp the value to duration if necessary.
@@ -1234,6 +1251,9 @@ export default class SegmentLoader extends videojs.EventTarget {
    * operation is complete
    */
   remove(start, end, done = () => {}, force = false) {
+
+    console.log("REMOVING ", start, " - ", end);
+
     // clamp end to duration if we need to remove everything.
     // This is due to a browser bug that causes issues if we remove to Infinity.
     // videojs/videojs-contrib-hls#1225
@@ -1347,7 +1367,6 @@ export default class SegmentLoader extends videojs.EventTarget {
     // see if we need to begin loading immediately
     const segmentInfo = this.chooseNextRequest_();
 
-    console.log("CHOOSENEXT", segmentInfo);
     if (!segmentInfo) {
       return;
     }
@@ -1403,7 +1422,7 @@ export default class SegmentLoader extends videojs.EventTarget {
     const buffered = this.buffered_();
     const playbackRate = this.vhs_.tech_.playbackRate();
     const bufferedEnd = lastBufferedEnd(buffered, playbackRate) || 0;
-    const bufferedTime = timeAheadOf(buffered, this.currentTime_());
+    const bufferedTime = timeAheadOf(buffered, this.currentTime_(), playbackRate);
     const preloaded = !this.hasPlayed_() && bufferedTime >= 1;
     const haveEnoughBuffer = bufferedTime >= this.goalBufferLength_();
     const segments = this.playlist_.segments;
@@ -2525,10 +2544,11 @@ export default class SegmentLoader extends videojs.EventTarget {
    * @param {Object} segmentInfo - the current segment
    */
   trimBackBuffer_(segmentInfo) {
-    const removeToTime = safeBackBufferTrimTime(
+    const removeRange = safeBackBufferTrimRange(
       this.seekable_(),
       this.currentTime_(),
-      this.playlist_.targetDuration || 10
+      this.playlist_.targetDuration || 10,
+      this.vhs_.tech_.playbackRate()
     );
 
     // Chrome has a hard limit of 150MB of
@@ -2537,8 +2557,8 @@ export default class SegmentLoader extends videojs.EventTarget {
     // we don't trigger the QuotaExceeded error
     // on the source buffer during subsequent appends
 
-    if (removeToTime > 0) {
-      this.remove(0, removeToTime);
+    if (removeRange) {
+      this.remove(...removeRange);
     }
   }
 

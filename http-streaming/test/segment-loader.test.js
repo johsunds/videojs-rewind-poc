@@ -2,7 +2,7 @@ import QUnit from 'qunit';
 import {
   default as SegmentLoader,
   illegalMediaSwitch,
-  safeBackBufferTrimTime,
+  safeBackBufferTrimRange as safeBackBufferTrimTime,
   timestampOffsetForSegment,
   shouldWaitForTimelineChange,
   segmentTooLong,

@@ -463,7 +463,7 @@ export const lastBufferedEnd = function(a, playbackRate = 1) {
  * @return {number}
  *          The number of seconds in the buffer passed the specified time.
  */
-export const timeAheadOf = function(range, startTime) {
+export const timeAheadOf = function(range, startTime, playbackRate = 1) {
   let time = 0;
 
   if (!range || !range.length) {
@@ -475,13 +475,13 @@ export const timeAheadOf = function(range, startTime) {
     const end = range.end(i);
 
     // startTime is after this range entirely
-    if (startTime > end) {
+    if (playbackRate >= 0 ? startTime > end : startTime < start) {
       continue;
     }
 
     // startTime is within this range
     if (startTime > start && startTime <= end) {
-      time += end - startTime;
+      time += (playbackRate >= 0 ? end - startTime : startTime - start);
       continue;
     }
 

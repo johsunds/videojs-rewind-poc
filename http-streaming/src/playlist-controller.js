@@ -1390,6 +1390,7 @@ export class PlaylistController extends videojs.EventTarget {
       return currentTime;
     }
 
+    console.log("SEEKING RESET EVERYTHING, currentTime: ", currentTime);
     // cancel outstanding requests so we begin buffering at the new
     // location
     this.mainSegmentLoader_.resetEverything();
