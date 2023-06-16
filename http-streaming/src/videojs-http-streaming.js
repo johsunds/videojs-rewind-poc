@@ -663,6 +663,7 @@ class VhsHandler extends Component {
         this.ignoreNextSeekingEvent_ = false;
         return;
       }
+      console.log("SEEKING CB");
 
       this.setCurrentTime(this.tech_.currentTime());
     });

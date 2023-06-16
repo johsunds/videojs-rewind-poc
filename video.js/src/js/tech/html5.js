@@ -43,7 +43,17 @@ class Html5 extends Tech {
     Html5.Events.forEach((type) => {
       if (NON_FORWARDED_HTML_VIDEO_EVENTS.includes(type)) return;
       this.el_.addEventListener(type, (e) => this.trigger(e));
-    })
+    });
+
+
+    this.isRewindSeek_ = false;
+    this.el_.addEventListener("seeking", (e) => {
+      if (this.isRewindSeek_) {
+        this.isRewindSeek_ = false;
+        return;
+      };
+      this.trigger(e);
+    });
 
     const source = options.source;
     let crossoriginTracks = false;
@@ -1231,6 +1241,7 @@ const NON_FORWARDED_HTML_VIDEO_EVENTS = [
   'play',
   'pause',
   'ratechange',
+  'seeking',
 ];
 
 /**
@@ -2011,6 +2022,7 @@ Html5.prototype.rewind = function() {
         this.setPlaybackRate(1.0);
         this.pause();
       } else {
+        this.isRewindSeek_ = true;
         this.el_.currentTime = newCurrentTime;
       }
   }, 30);
