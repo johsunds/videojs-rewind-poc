@@ -2050,6 +2050,8 @@ export default class SegmentLoader extends videojs.EventTarget {
   }
 
   handleData_(simpleSegment, result) {
+    console.log("handleData_");
+    console.log({ len: this.buffered_().length, start: this.buffered_().length && this.buffered_().start(0), end: this.buffered_().length && this.buffered_().end(0) });
     this.earlyAbortWhenNeeded_(simpleSegment.stats);
 
     if (this.checkForAbort_(simpleSegment.requestId)) {
@@ -2362,6 +2364,8 @@ export default class SegmentLoader extends videojs.EventTarget {
         segments
       });
     }
+
+    console.log({segmentInfo, type, bytes});
 
     this.sourceUpdater_.appendBuffer(
       {segmentInfo, type, bytes},
