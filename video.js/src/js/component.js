@@ -105,7 +105,8 @@ class Component {
     // if evented is anything except false, we want to mixin in evented
     if (options.evented !== false) {
       // Make this an evented object and use `el_`, if available, as its event bus
-      evented(this, {eventBusKey: this.el_ ? 'el_' : null});
+      // Optionally, use a custom eventBusKey
+      evented(this, {eventBusKey: options.eventBusKey !== undefined ? options.eventBusKey : this.el_ ? 'el_' : null});
 
       this.handleLanguagechange = this.handleLanguagechange.bind(this);
       this.on(this.player_, 'languagechange', this.handleLanguagechange);

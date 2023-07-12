@@ -437,12 +437,16 @@ export const isRangeDifferent = function(a, b) {
   return false;
 };
 
-export const lastBufferedEnd = function(a) {
-  if (!a || !a.length || !a.end) {
+export const lastBufferedEnd = function(a, playbackRate = 1) {
+  if (!a || !a.length || !a.end || !a.start) {
     return;
   }
 
-  return a.end(a.length - 1);
+  if (playbackRate >= 0) {
+    return a.end(a.length - 1);
+  } else {
+    return a.start(a.length - 1);
+  }
 };
 
 /**
@@ -459,7 +463,7 @@ export const lastBufferedEnd = function(a) {
  * @return {number}
  *          The number of seconds in the buffer passed the specified time.
  */
-export const timeAheadOf = function(range, startTime) {
+export const timeAheadOf = function(range, startTime, playbackRate = 1) {
   let time = 0;
 
   if (!range || !range.length) {
@@ -471,13 +475,13 @@ export const timeAheadOf = function(range, startTime) {
     const end = range.end(i);
 
     // startTime is after this range entirely
-    if (startTime > end) {
+    if (playbackRate >= 0 ? startTime > end : startTime < start) {
       continue;
     }
 
     // startTime is within this range
     if (startTime > start && startTime <= end) {
-      time += end - startTime;
+      time += (playbackRate >= 0 ? end - startTime : startTime - start);
       continue;
     }
 

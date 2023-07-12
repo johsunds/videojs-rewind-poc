@@ -663,6 +663,7 @@ class VhsHandler extends Component {
         this.ignoreNextSeekingEvent_ = false;
         return;
       }
+      console.log("SEEKING CB");
 
       this.setCurrentTime(this.tech_.currentTime());
     });
@@ -673,6 +674,12 @@ class VhsHandler extends Component {
       if (this.tech_.error() && this.playlistController_) {
         this.playlistController_.pauseLoading();
       }
+    });
+
+    this.on(this.tech_, 'ratesignchange', () => {
+      console.log("RATESIGNCHANGE");
+      this.playlistController_.mainSegmentLoader_.resyncLoader();
+      this.playlistController_.audioSegmentLoader_.resyncLoader();
     });
 
     this.on(this.tech_, 'play', this.play);

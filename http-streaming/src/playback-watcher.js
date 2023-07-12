@@ -201,6 +201,7 @@ export default class PlaybackWatcher {
 
     this[`${type}Buffered_`] = buffered;
 
+
     // if another watcher is going to fix the issue or
     // the buffered value for this loader changed
     // appends are working
