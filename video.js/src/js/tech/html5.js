@@ -1988,6 +1988,9 @@ Html5.prototype.playbackRate = function() {
 Html5.prototype.setPlaybackRate = function(rate) {
   if (rate != this.extendedPlaybackRate) {
     this.trigger('ratechange');
+    if (Math.sign(rate) !== Math.sign(this.extendedPlaybackRate)) {
+      this.trigger('ratesignchange');
+    }
   }
   this.extendedPlaybackRate = rate;
   if (rate >= 0) {

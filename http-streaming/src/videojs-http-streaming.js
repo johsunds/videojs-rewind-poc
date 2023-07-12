@@ -676,8 +676,8 @@ class VhsHandler extends Component {
       }
     });
 
-    this.on(this.tech_, 'ratechange', () => {
-      this.playlistController_.mainSegmentLoader_.resetLoader();
+    this.on(this.tech_, 'ratesignchange', () => {
+      this.playlistController_.mainSegmentLoader_.resyncLoader();
     });
 
     this.on(this.tech_, 'play', this.play);
